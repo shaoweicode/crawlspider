@@ -1,0 +1,109 @@
+基于 Scrapy 的 CrawlSpider 编写爬虫
+介绍
+
+在上一周的 Scarpy 课程中，我们编写的爬虫都是基于 scrapy.spiders 的，其实 scrapy.spiders 模块下还提供了不少其他类型的爬虫，CrawlSpider 就是比较常用的一种。相较于 Spider，CrawlSpider 最大的不同是多了一个 rules 属性。rules 是一个包含 Rule 对象的列表，每个 Rule 对象定义了如何从返回的页面解析接下来要爬取的页面链接的规则。Rule 对象的默认参数如下：
+
+scrapy.spiders.Rule(link_extractor, callback=None, cb_kwargs=None, follow=None, process_links=None, process_request=None)
+
+对于该类中的参数，具体含义如下：
+
+    link_extractor 是一个 Link Extractor 对象。 其定义了如何从爬取到的页面提取链接。
+    callback 是一个 callable 或 string。从 link_extractor 中每获取到链接时将会调用该函数，该回调函数接受一个 response作为其第一个参数， 并返回一个包含Item 或者是 Request 对象。
+    cb_kwargs 包含传递给回调函数的的字典。
+    follow 是一个布尔值，指定了根据该规则从 response 提取的链接是否需要跟进。 如果 callback 为 None， follow 默认设置为 True ，否则默认为 False 。
+    process_links 是一个 callable 或 string。 从 link_extractor 中获取到链接列表时将会调用该函数。该方法主要用来过滤。
+    process_request 是一个 callable 或 string, 用来过滤 request。 该规则提取到每个 request 时都会调用该函数。该函数必须返回一个 request 或者 None。
+
+接下来，我们需要使用 Scrapy 标准项目结构，编写一个继承 CrawlSpider 的爬虫，爬取 Flask 的文档的所有页面文本，爬取页面的 URL 为：http://flask.pocoo.org/docs/0.12/
+
+其中，每个 item 包含 url 和 text 两个字段。url 为当前页面的链接，text 为页面中的文本。将结果保存到 redis 数据库的 list 结构中。 每一个 list 节点是一个 item，list 在 redis 中的 key 为 flask_doc:items 。
+
+由于实验楼在线环境中尚未安装 Redis，请使用下面的命令安装并启动 Redis：
+
+# 安装 Redis
+$ sudo apt-get update
+$ sudo apt-get install redis-server
+
+# 安装 redis-py 模块
+$ sudo pip3 install redis
+
+# 启动 Redis 服务，写入数据时请不要关闭 Redis 服务!!!
+$ redis-server
+
+爬虫文件 flask.py 的框架代码如下，你需要补充 TODO 部分内容：
+
+# -*- coding: utf-8 -*-
+import scrapy
+from scrapy.spiders import Rule
+from scrapy.linkextractors import LinkExtractor
+from flask_doc.items import PageItem
+
+class FlaskSpider(scrapy.spiders.CrawlSpider):
+name = 'flask'
+allowed_domains = ['flask.pocoo.org']
+start_urls = "起始爬取链接"
+
+rules = (
+    Rule("TODO: 配置 Link Extractor，及爬取链接的规则，并合理定义其他相关参数"),
+)
+
+def parse_page(self, response):
+    item = PageItem()
+    """
+    TODO:补充 url 和 text 的解析规则
+    """
+    yield item
+
+pipelines.py 的框架代码如下，你需要补充 TODO 部分内容：
+
+-*- coding: utf-8 -*-
+
+import re
+import redis
+import json
+
+
+class FlaskDocPipeline(object):
+    def process_item(self, item, spider):
+    """
+    TODO: 将 item 结果以 JSON 形式保存到 Redis 数据库的 list 结构中
+    """
+    return item
+
+def open_spider(self, spider):
+    # 连接数据库
+    self.redis = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+爬虫项目里的其余文件相信你已经很熟悉了，这里就不再一一列出示例代码。
+目标
+
+    题目需要爬取 Flask 的文档的所有页面文本
+    text 不能包含 html 标签
+    text 不能包含连续两个及以上的空白字符
+    爬虫工程 flask_doc 放入 /home/shiyanlou/ 目录下，并约定爬虫名为 flask
+    数据存入 redis 中的 key 规定为 flask_doc:items
+    特别提醒：点击「提交结果」时，请保持 Redis 服务处于运行状态。
+
+提示
+
+    使用 redis-py 库连接 Redis 数据库，具体参考该模块官方文档给出的 示例。
+    将 item 序列化为 JSON 数据在存入 Redis ，你可能会使用到 Redis 的 redis.lpush() 操作。
+    使用 re.sub 处理文本替换，re.sub(pattern, repl, string) 提供的参数有:
+        pattern : 正则中的模式字符串。
+        repl : 替换的字符串，也可为一个函数。
+        string : 要被查找替换的原始字符串。
+
+知识点
+
+    CrawlSpider
+    Rule
+    正则表达式
+    Redis
+
+参考资料
+
+    Spiders — Scrapy 1.5.0 documentation
+    scrapy自动多网页爬取CrawlSpider类（五）
+    Python 正则表达式
+
+*本课程内容，由作者授权实验楼发布，未经允许，禁止转载、下载及非法传播。
