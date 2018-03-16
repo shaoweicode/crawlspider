@@ -10,7 +10,7 @@ import json
 
 class FlaskDocPipeline(object):
     def process_item(self, item, spider):
-        item['text'] = re.sub('\s','',item['text'])
+        item['text'] = re.sub('\s{2,}','',''.join(item['text']) )
         self.redis.lpush('flask_doc:items',dict(item))
         return item
 

@@ -7,10 +7,10 @@ import re
 class FlaskSpider(scrapy.spiders.CrawlSpider):
     name = 'flask'
     allowed_domains = ['flask.pocoo.org']
-    start_urls = "http://flask.pocoo.org/docs/0.12/"
+    start_urls = ["http://flask.pocoo.org/docs/0.12/"]
     # http://flask.pocoo.org/docs/0.12/
     rules = (
-        Rule(LinkExtractor(allow=('flask.pocoo.org/docs/0.12/', )), callback='parse_item',follow=True),
+        Rule(LinkExtractor(allow=('flask.pocoo.org/docs/0.12/', )), callback='parse_page',follow=True),
     )
 
     def parse_page(self, response):
@@ -19,6 +19,7 @@ class FlaskSpider(scrapy.spiders.CrawlSpider):
         TODO:补充 url 和 text 的解析规则
         """
         item['url'] = response.url
-        item['text']= response.css('div.section::text').extract_first()
-
+        
+        item['text']= response.css('div.body *::text').extract()
+        
         yield item
